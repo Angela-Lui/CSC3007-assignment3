@@ -8,22 +8,39 @@
     <!--Setting the viewport to make website look good on all devices-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!--Google Fonts-->
+    <link href="https://fonts.googleapis.com/css?family=Dosis:400,700" rel="stylesheet" type="text/css" />
+
     <!--Specifies the URL of external script file (absolute URL)-->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.js"></script>
 
     <!--Title of HTML Page-->
-    <title>Singapore Population Choropleth</title>
-
-    <style></style>
+    <title>Assignment 3</title>
+    <style>
+        p {
+            font-size: 35px;
+            text-align: center;
+        }
+    </style>
 </head>
 
-<svg></svg>
-<script>
+<body>
+    <div class="">
+        <p class=""><b>Singapore Population Choropleth Map</b></p>
+    </div>
+    <div class="tooltip"></div>
+</body>
 
+<svg></svg>
+
+<script>
+    // Reference Link: https://d3-graph-gallery.com/graph/choropleth_hover_effect.html
     let width = 1000, height = 600;
     
     let svg = d3.select("svg")
         .attr("viewBox", "0 0 " + width + " " + height)
+        .style("background", "transparent")
 
     let dataMap = new Map();
     
@@ -36,8 +53,8 @@
     
     // Colorscale
     var colorScale = d3.scaleThreshold()
-    .domain([500, 1000, 2000, 3000, 4000, 5000, 6000, 8000])
-    .range(d3.schemeBlues[8]);
+        .domain([1000, 3000, 5000, 10000, 25000, 40000, 60000])
+        .range(d3.schemeBlues[7]);
 
     // Map and projection
     var projection = d3.geoMercator()
@@ -45,8 +62,7 @@
         .fitExtent([[20, 20], [980, 580]], data[0]);
     
     let geopath = d3.geoPath().projection(projection);
-    var tooltip = d3.select(".tooltip").style("opacity", 0)
-    
+
     svg.append("g")
         .attr("id", "districts")
         .selectAll("path")
@@ -54,15 +70,57 @@
         .enter()
         .append("path")
         .attr("d", geopath)
-        .attr("fill", function(loadData){
+        // Set the color of each properties
+        .attr("fill", loadData => {
             loadData.total = dataMap.get(loadData.properties.Name) || 0;
             return colorScale(loadData.total);
         })
-        .style("stroke", "pink")
+        .style("stroke", "grey")
         .style("stroke-width", 1)
-        .style("opacity", 4)
-    })
-    
-    </script>
-    </body>
-    </html>
+        .style("opacity", 1)
+        
+        .on("mouseover",  (event, d) => {
+            d3.select(".tooltip")
+            .transition()
+            .duration(100)
+            .style("opacity", 2)
+            .style("position", "absolute")
+            .style("background", "#fff")
+            .text(`POPULATION IN `+ d.properties.Name + `: `+ d.total)
+            .style("left", (event.pageX) + "px")
+            .style("top", (event.pageY) + "px");
+
+            d3.select(event.currentTarget)
+            .style("stroke", "black")
+            .style("stroke-width", 1.5)
+            .style("opacity", 2)
+            .classed("selected", true);
+        })
+        
+        .on("mouseout", (event, d) => {
+            d3.select(".tooltip")
+            .transition()
+            .duration(50)
+            .style("opacity", 0);
+
+            d3.select(event.currentTarget)
+            .style("stroke", "black")
+            .style("stroke-width", 0.5)
+            .style("opacity", 0.5)
+            .classed("selected", false);   
+        })
+
+    var legend = d3.legendColor()
+        .labels([1000, 3000, 5000, 10000, 25000, 40000, 60000])
+        .scale(colorScale)
+        .title("Population");    
+
+    legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", "translate(50,30)")
+        .style("font-size", "12px")
+        .call(legend);  
+})
+</script>
+</body>
+</html>
